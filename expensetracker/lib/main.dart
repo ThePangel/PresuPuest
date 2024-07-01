@@ -24,13 +24,10 @@ void main() async {
   );
 
   Future<void> insertExpense(Expense expense) async {
-  // Get a reference to the database.
+  
   final db = await database;
 
-  // Insert the Dog into the correct table. You might also specify the
-  // `conflictAlgorithm` to use in case the same dog is inserted twice.
-  //
-  // In this case, replace any previous data.
+  
   await db.insert(
     'expenses',
     expense.toMap(),
@@ -39,13 +36,13 @@ void main() async {
   }
   
   Future<List<Expense>> retrieveExpenses() async {
-  // Get a reference to the database.
+  
   final db = await database;
 
-  // Query the table for all the dogs.
+  
   final List<Map<String, Object?>> expenseMaps = await db.query('expenses');
 
-  // Convert the list of each dog's fields into a list of `Dog` objects.
+  
   return [
     for (final {
           'name': name as String,
@@ -56,15 +53,15 @@ void main() async {
     ];
   } 
   Future<void> deleteExpense(String name) async {
-  // Get a reference to the database.
+  
   final db = await database;
 
-  // Remove the Dog from the database.
+  
   await db.delete(
     'expenses',
-    // Use a `where` clause to delete a specific dog.
+    
     where: 'name = ?',
-    // Pass the Dog's id as a whereArg to prevent SQL injection.
+    
     whereArgs: [name],
   );
 }

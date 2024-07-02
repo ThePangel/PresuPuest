@@ -112,19 +112,11 @@ class _MyAppState extends State<MyApp> {
   File? _image;
   String name = "";
   int cost = 0;
-  final TextEditingController _controller1 = TextEditingController();
-  final TextEditingController _controller2 = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller1.dispose();
-    _controller2.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(useMaterial3: true),
       home: Builder(
         builder: (BuildContext context) {
           return Scaffold(
@@ -144,105 +136,165 @@ class _MyAppState extends State<MyApp> {
             body: <Widget>[
               Column(
                 children: [
+                  Stack(children: [
+                    Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text("45€",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 75,
+                                  foreground: Paint()
+                                    ..style = PaintingStyle.stroke
+                                    ..strokeWidth = 6
+                                    ..color = Colors.black)),
+                        )),
+                    Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text("45€",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 75,
+                                  color: Colors.green)),
+                        )),
+                  ]),
                   Container(
-                    height: 500,
+                    height: 450,
                     child: Center(
-                        child: ListView.builder(
-                      itemCount: _list.length,
-                      itemBuilder: (context, index) {
-                        return Card(
-                          child: ListTile(
-                              title: Text(_list[index].name),
-                              subtitle: Text(_list[index].cost.toString()),
-                              leading: Image.memory(
-                                base64Decode(_list[index].image),
-                                fit: BoxFit.cover,
-                                width: 100,
-                                height: 100,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15.0),
-                              )),
-                        );
-                      },
+                        child: Card(
+                      elevation: 0,
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15.0),
+                      ),
+                      child: ListView.builder(
+                        itemCount: _list.length,
+                        itemBuilder: (context, index) {
+                          return Card(
+                            child: ListTile(
+                                title: Text(_list[index].name),
+                                subtitle: Text(_list[index].cost.toString()),
+                                leading: Image.memory(
+                                  base64Decode(_list[index].image),
+                                  fit: BoxFit.cover,
+                                  width: 100,
+                                  height: 100,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0),
+                                )),
+                          );
+                        },
+                      ),
                     )),
                   ),
-                  ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                            context: context,
-                            builder: (BuildContext context) => AlertDialog(
-                                title: Text("Input expenses"),
-                                content: Column(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(2.0),
-                                      child: Center(
-                                          child: SizedBox(
-                                        height: 150,
-                                        width: 500,
-                                        child: _image == null
-                                            ? const Center(
-                                                child:
-                                                    Text('No Image selected'))
-                                            : Image.file(
-                                                _image!,
-                                                fit: BoxFit.contain,
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: EdgeInsets.all(20),
+                      child: FloatingActionButton(
+                          shape: CircleBorder(),
+                          onPressed: () {
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) => AlertDialog(
+                                      title: Text("Input expenses"),
+                                      content: Container(
+                                        height: 260,
+                                        child: Column(
+                                          children: [
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(2.0),
+                                              child: Center(
+                                                  child: SizedBox(
+                                                height: 75,
+                                                width: 75,
+                                                child: _image == null
+                                                    ? const Center(
+                                                        child: Text(
+                                                            'No Image selected'))
+                                                    : Image.file(
+                                                        _image!,
+                                                        fit: BoxFit.contain,
+                                                      ),
+                                              )),
+                                            ),
+                                            ElevatedButton(
+                                                onPressed: () async {
+                                                  var pickedFile =
+                                                      await _picker.pickImage(
+                                                          source: ImageSource
+                                                              .gallery);
+                                                  if (pickedFile != null) {
+                                                    setState(() {
+                                                      _image =
+                                                          File(pickedFile.path);
+                                                    });
+                                                  }
+                                                },
+                                                child: Text("Pick image")),
+                                            Padding(
+                                              padding: EdgeInsets.all(5),
+                                              child: TextField(
+                                                decoration: InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  labelText: "Name of expense",
+                                                ),
+                                                onChanged: (value) {
+                                                  name = value;
+                                                  print(value);
+                                                },
                                               ),
-                                      )),
-                                    ),
-                                    ElevatedButton(
-                                        onPressed: () async {
-                                          var pickedFile =
-                                              await _picker.pickImage(
-                                                  source: ImageSource.gallery);
-                                          if (pickedFile != null) {
-                                            setState(() {
-                                              _image = File(pickedFile.path);
-                                            });
-                                          }
-                                        },
-                                        child: Text("Pick image")),
-                                    TextField(
-                                      controller: _controller1,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        labelText: "Name of expense",
+                                            ),
+                                            Padding(
+                                              padding: EdgeInsets.all(5),
+                                              child: TextField(
+                                                decoration: InputDecoration(
+                                                  border: OutlineInputBorder(),
+                                                  labelText: "Cost of expense",
+                                                ),
+                                                onChanged: (value) {
+                                                  cost = int.parse(value);
+                                                },
+                                                keyboardType:
+                                                    TextInputType.number,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                      onEditingComplete: () {
-                                        name = _controller1.text;
-                                        print(name);
-                                      },
-                                    ),
-                                    TextField(
-                                      controller: _controller2,
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        labelText: "Cost of expense",
-                                      ),
-                                      onEditingComplete: () {
-                                        cost = int.parse(_controller2.text);
-                                      },
-                                    ),
-                                    ElevatedButton(
-                                        onPressed: () async {
-                                          insertExpense(Expense(
-                                              name: name,
-                                              cost: cost,
-                                              image: base64Encode(await _image!
-                                                  .readAsBytes())));
+                                      actions: [
+                                        Padding(
+                                          padding: EdgeInsets.all(25),
+                                          child: ElevatedButton(
+                                              onPressed: () async {
+                                                insertExpense(Expense(
+                                                    name: name,
+                                                    cost: cost,
+                                                    image: base64Encode(
+                                                        await _image!
+                                                            .readAsBytes())));
 
-                                          _list = await retrieveExpenses();
-                                          setState(() {
-                                            cost = 0;
-                                            name = "";
-                                          });
-                                        },
-                                        child: Text("Save"))
-                                  ],
-                                )));
-                      },
-                      child: Text("yes"))
+                                                _list =
+                                                    await retrieveExpenses();
+                                                setState(() {
+                                                  cost = 0;
+                                                  name = "";
+                                                });
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text("Save")),
+                                        ),
+                                      ],
+                                    ));
+                          },
+                          child: Icon(Icons.add)),
+                    ),
+                  )
                 ],
               ),
               const Center(child: Text("2º page")),

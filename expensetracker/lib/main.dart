@@ -13,8 +13,10 @@ import 'package:flutter/services.dart' show rootBundle;
 List<Expense> _list = [];
 List<Expense> _listCopy = [];
 var database;
-int balance = 0;
+double balance = 0;
 var prefs;
+
+enum Item { edit, delete }
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,7 +25,7 @@ void main() async {
     join(await getDatabasesPath(), 'expenses.db'),
     onCreate: (db, version) {
       return db.execute(
-        'CREATE TABLE expenses(name TEXT PRIMARY KEY, cost INTEGER, image TEXT)',
+        'CREATE TABLE expenses(name TEXT PRIMARY KEY, cost REAL, image TEXT, date TEXT)',
       );
     },
     version: 1,
@@ -31,7 +33,7 @@ void main() async {
   prefs = await SharedPreferences.getInstance();
   _list = await retrieveExpenses();
   _listCopy = _list;
-  balance = prefs.getInt("balance") ?? 0;
+  balance = prefs.getDouble("balance") ?? 0;
   updateBalance();
   runApp(const MyApp());
 }
@@ -54,10 +56,11 @@ Future<List<Expense>> retrieveExpenses() async {
   return [
     for (final {
           'name': name as String,
-          'cost': cost as int,
+          'cost': cost as double,
           'image': image as String,
+          'date': date as String,
         } in expenseMaps)
-      Expense(name: name, cost: cost, image: image),
+      Expense(name: name, cost: cost, image: image, date: date),
   ];
 }
 
@@ -71,14 +74,33 @@ Future<void> deleteExpense(String name) async {
   );
 }
 
-Future<void> updateExpense(Expense expense) async {
+Future<void> updateExpense(Expense expense, String name) async {
   final db = await database;
 
   await db.update(
     'expenses',
     expense.toMap(),
     where: 'name = ?',
-    whereArgs: [expense.name],
+    whereArgs: [name],
+  );
+}
+
+Future<Expense> retrieveSingleExpense(String name) async {
+  final db = await database;
+
+  final List<Map<String, Object?>> result = await db.query(
+    'expenses',
+    where: 'name = ?',
+    whereArgs: [name],
+  );
+
+  final Map<String, Object?> expenseMap = result.first;
+
+  return Expense(
+    name: expenseMap['name'] as String,
+    cost: expenseMap['cost'] as double, // Convert cost to String if needed
+    image: expenseMap['image'] as String,
+    date: expenseMap['date'] as String,
   );
 }
 
@@ -91,13 +113,15 @@ class MyApp extends StatefulWidget {
 
 class Expense {
   final String name;
-  final int cost;
+  final double cost;
   final String image;
+  final String date;
 
   const Expense({
     required this.name,
     required this.cost,
     required this.image,
+    required this.date,
   });
 
   Map<String, Object?> toMap() {
@@ -105,25 +129,28 @@ class Expense {
       'name': name,
       'cost': cost,
       'image': image,
+      'date': date,
     };
   }
 
   @override
   String toString() {
-    return 'Expense{name: $name, cost: $cost, image: $image}';
+    return 'Expense{name: $name, cost: $cost, image: $image, date: $date}';
   }
 }
 
 void updateBalance() async {
-  await prefs.setInt('balance', balance);
+  await prefs.setDouble('balance', double.parse(balance.toStringAsFixed(2)));
 }
 
 class _MyAppState extends State<MyApp> {
   final ImagePicker _picker = ImagePicker();
   File? _image;
   String name = "";
-  int cost = 0;
+  double cost = 0;
   TextEditingController editingController = TextEditingController();
+  TextEditingController _controller = TextEditingController();
+  TextEditingController _controller2 = TextEditingController();
 
   void search(String query) {
     setState(() {
@@ -161,7 +188,7 @@ class _MyAppState extends State<MyApp> {
                       padding: EdgeInsets.all(20),
                       child: Align(
                         alignment: Alignment.centerRight,
-                        child: Text("${balance.toString()}€",
+                        child: Text("${balance.toStringAsFixed(2)}€",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 75,
@@ -174,7 +201,7 @@ class _MyAppState extends State<MyApp> {
                       padding: EdgeInsets.all(20),
                       child: Align(
                         alignment: Alignment.centerRight,
-                        child: Text("${balance.toString()}€",
+                        child: Text("${balance.toStringAsFixed(2)}€",
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 75,
@@ -211,12 +238,174 @@ class _MyAppState extends State<MyApp> {
                         return Card(
                           child: ListTile(
                               title: Text(_list[index].name),
-                              subtitle: Text(_list[index].cost.toString()),
+                              subtitle: Text(
+                                  "${_list[index].cost.toString()} \n${_list[index].date}"),
+                              isThreeLine: true,
+                              trailing: PopupMenuButton(
+                                onSelected: (Item item) async {
+                                  Expense temp = await retrieveSingleExpense(
+                                      _list[index].name);
+                                  _controller.text = temp.name;
+                                  _controller2.text = temp.cost.toString();
+                                  name = temp.name;
+                                  cost = temp.cost;
+                                  setState(() {
+                                    if (item == Item.edit) {
+                                      showDialog(
+                                          context: context,
+                                          builder: (BuildContext context) =>
+                                              AlertDialog(
+                                                title: Text("Input expenses"),
+                                                content: Container(
+                                                  height: 260,
+                                                  child: Column(
+                                                    children: [
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(2.0),
+                                                        child: Center(
+                                                            child: SizedBox(
+                                                          height: 75,
+                                                          width: 75,
+                                                          child: _image == null
+                                                              ? const Center(
+                                                                  child: Text(
+                                                                      'No Image selected'))
+                                                              : Image.file(
+                                                                  _image!,
+                                                                  fit: BoxFit
+                                                                      .contain,
+                                                                ),
+                                                        )),
+                                                      ),
+                                                      ElevatedButton(
+                                                          onPressed: () async {
+                                                            var pickedFile =
+                                                                await _picker.pickImage(
+                                                                    source: ImageSource
+                                                                        .gallery);
+                                                            if (pickedFile !=
+                                                                null) {
+                                                              setState(() {
+                                                                _image = File(
+                                                                    pickedFile
+                                                                        .path);
+                                                              });
+                                                            }
+                                                          },
+                                                          child: Text(
+                                                              "Pick image")),
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.all(5),
+                                                        child: TextField(
+                                                          controller:
+                                                              _controller,
+                                                          decoration:
+                                                              InputDecoration(
+                                                            border:
+                                                                OutlineInputBorder(),
+                                                            labelText:
+                                                                "Name of expense",
+                                                          ),
+                                                          onChanged: (value) {
+                                                            name = value;
+                                                          },
+                                                        ),
+                                                      ),
+                                                      Padding(
+                                                        padding:
+                                                            EdgeInsets.all(5),
+                                                        child: TextField(
+                                                          controller:
+                                                              _controller2,
+                                                          decoration:
+                                                              InputDecoration(
+                                                            border:
+                                                                OutlineInputBorder(),
+                                                            labelText:
+                                                                "Cost of expense",
+                                                          ),
+                                                          onChanged: (value) {
+                                                            cost = double.parse(
+                                                                value);
+                                                          },
+                                                          keyboardType:
+                                                              TextInputType
+                                                                  .number,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                actions: [
+                                                  Padding(
+                                                    padding: EdgeInsets.all(25),
+                                                    child: ElevatedButton(
+                                                        onPressed: () async {
+                                                          updateExpense(
+                                                              Expense(
+                                                                  name: name,
+                                                                  cost: cost,
+                                                                  image: base64Encode(_image !=
+                                                                          null
+                                                                      ? await _image!
+                                                                          .readAsBytes()
+                                                                      : (await rootBundle.load(
+                                                                              'assets/no-image-icon.png'))
+                                                                          .buffer
+                                                                          .asUint8List()),
+                                                                  date: DateTime
+                                                                          .now()
+                                                                      .toString()
+                                                                      .substring(
+                                                                          0,
+                                                                          19)),
+                                                              _list[index]
+                                                                  .name);
+
+                                                          _list =
+                                                              await retrieveExpenses();
+
+                                                          _listCopy = _list;
+                                                          balance -= cost;
+                                                          setState(() {
+                                                            updateBalance();
+                                                            cost = 0;
+                                                            name = "";
+                                                          });
+                                                          Navigator.of(context)
+                                                              .pop();
+                                                        },
+                                                        child: Text("Save")),
+                                                  ),
+                                                ],
+                                              ));
+                                    } else if (item == Item.delete) {
+                                      deleteExpense(_list[index].name);
+                                    }
+                                  });
+
+                                  _list = await retrieveExpenses();
+
+                                  setState(() {});
+                                },
+                                itemBuilder: (BuildContext context) {
+                                  return <PopupMenuEntry<Item>>[
+                                    const PopupMenuItem<Item>(
+                                        child: Text("Edit"), value: Item.edit),
+                                    const PopupMenuItem<Item>(
+                                        child: Text("Delete"),
+                                        value: Item.delete)
+                                  ];
+                                },
+                              ),
                               leading: Image.memory(
                                 base64Decode(_list[index].image),
                                 fit: BoxFit.cover,
                                 width: 100,
-                                height: 100,
+                                height: 250,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15.0),
@@ -280,7 +469,7 @@ class _MyAppState extends State<MyApp> {
                                                                         setState(
                                                                             () {
                                                                           cost =
-                                                                              int.parse(value);
+                                                                              double.parse(value);
                                                                         });
                                                                       },
                                                                       keyboardType:
@@ -298,9 +487,11 @@ class _MyAppState extends State<MyApp> {
                                                                           () {
                                                                         balance +=
                                                                             cost;
-                                                                        prefs.setInt(
+                                                                        prefs.setDouble(
                                                                             'balance',
-                                                                            balance);
+                                                                            double.parse(balance.toStringAsFixed(2)));
+                                                                        cost =
+                                                                            0;
                                                                       });
                                                                       Navigator.of(
                                                                               context)
@@ -408,7 +599,7 @@ class _MyAppState extends State<MyApp> {
                                                                           onChanged:
                                                                               (value) {
                                                                             cost =
-                                                                                int.parse(value);
+                                                                                double.parse(value);
                                                                           },
                                                                           keyboardType:
                                                                               TextInputType.number,
@@ -427,7 +618,8 @@ class _MyAppState extends State<MyApp> {
                                                                           insertExpense(Expense(
                                                                               name: name,
                                                                               cost: cost,
-                                                                              image: base64Encode(_image != null ? await _image!.readAsBytes() : (await rootBundle.load('assets/no-image-icon.png')).buffer.asUint8List())));
+                                                                              image: base64Encode(_image != null ? await _image!.readAsBytes() : (await rootBundle.load('assets/no-image-icon.png')).buffer.asUint8List()),
+                                                                              date: DateTime.now().toString().substring(0, 19)));
 
                                                                           _list =
                                                                               await retrieveExpenses();

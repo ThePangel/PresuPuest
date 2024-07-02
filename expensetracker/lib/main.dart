@@ -8,8 +8,10 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart' show rootBundle;
 
 List<Expense> _list = [];
+List<Expense> _listCopy = [];
 var database;
 int balance = 0;
 var prefs;
@@ -28,6 +30,7 @@ void main() async {
   );
   prefs = await SharedPreferences.getInstance();
   _list = await retrieveExpenses();
+  _listCopy = _list;
   balance = prefs.getInt("balance") ?? 0;
   updateBalance();
   runApp(const MyApp());
@@ -112,15 +115,7 @@ class Expense {
 }
 
 void updateBalance() async {
-  int tempBalance = 0;
-  for (int i = 0; i < _list.length; i++) {
-    tempBalance -= _list[i].cost;
-  }
-  if (balance != tempBalance) {
-    balance = tempBalance;
-
-    await prefs.setInt('balance', balance);
-  }
+  await prefs.setInt('balance', balance);
 }
 
 class _MyAppState extends State<MyApp> {
@@ -128,6 +123,16 @@ class _MyAppState extends State<MyApp> {
   File? _image;
   String name = "";
   int cost = 0;
+  TextEditingController editingController = TextEditingController();
+
+  void search(String query) {
+    setState(() {
+      _list = _listCopy
+          .where(
+              (item) => item.name.toLowerCase().contains(query.toLowerCase()))
+          .toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +184,20 @@ class _MyAppState extends State<MyApp> {
                       )),
                 ]),
                 Container(
-                  height: 520,
+                    width: 300,
+                    child: TextField(
+                      controller: editingController,
+                      decoration: InputDecoration(
+                          labelText: "Search",
+                          hintText: "Search",
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(25.0)))),
+                      onChanged: (value) => search(value),
+                    )),
+                Container(
+                  height: 420,
                   child: Center(
                       child: Card(
                     elevation: 0,
@@ -409,11 +427,15 @@ class _MyAppState extends State<MyApp> {
                                                                           insertExpense(Expense(
                                                                               name: name,
                                                                               cost: cost,
-                                                                              image: base64Encode(await _image!.readAsBytes())));
+                                                                              image: base64Encode(_image != null ? await _image!.readAsBytes() : (await rootBundle.load('assets/no-image-icon.png')).buffer.asUint8List())));
 
                                                                           _list =
                                                                               await retrieveExpenses();
 
+                                                                          _listCopy =
+                                                                              _list;
+                                                                          balance -=
+                                                                              cost;
                                                                           setState(
                                                                               () {
                                                                             updateBalance();

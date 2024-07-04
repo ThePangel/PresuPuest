@@ -7,7 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:flutter/services.dart' show rootBundle;
 
 List<Expense> _listExpense = [];
@@ -16,7 +16,6 @@ List<Balance> _listBalance = [];
 List<Balance> _listBalanceCopy = [];
 var database;
 double balance = 0;
-var prefs;
 
 enum Item { edit, delete }
 
@@ -36,12 +35,11 @@ void main() async {
     version: 1,
   );
 
-  prefs = await SharedPreferences.getInstance();
   _listExpense = await retrieveExpenses();
   _listExpenseCopy = _listExpense;
   _listBalance = await retrieveBalances();
   _listBalanceCopy = _listBalance;
-  balance = prefs.getDouble("balance") ?? 0;
+
   updateBalance();
   runApp(const MyApp());
 }
@@ -102,12 +100,16 @@ Future<void> deleteExpense(String name) async {
     where: 'name = ?',
     whereArgs: [name],
   );
+}
+
+Future<void> deleteBalance(String name) async {
+  final db = await database;
+
   await db.delete(
     'balances',
     where: 'name = ?',
     whereArgs: [name],
   );
- 
 }
 
 Future<void> updateExpense(var table, String name) async {
@@ -226,8 +228,14 @@ class Balance {
   }
 }
 
-void updateBalance() async {
-  await prefs.setDouble('balance', double.parse(balance.toStringAsFixed(2)));
+void updateBalance() {
+  balance = 0;
+  for (int i = 0; i < _listBalance.length; i++) {
+    balance += _listBalance[i].cost;
+  }
+  for (int i = 0; i < _listExpense.length; i++) {
+    balance -= _listExpense[i].cost;
+  }
 }
 
 class _MyAppState extends State<MyApp> {
@@ -267,45 +275,42 @@ class _MyAppState extends State<MyApp> {
               ),
               backgroundColor: Colors.black,
               shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(25),
-                  bottomRight: Radius.circular(25),
-                ),
-              ),
+                  borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              )),
             ),
             body: Column(
               children: [
                 Container(
                   height: 100,
-                  child: SingleChildScrollView(
-                    child: Stack(children: [
-                      Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text("${balance.toStringAsFixed(2)}€",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 75,
-                                    foreground: Paint()
-                                      ..style = PaintingStyle.stroke
-                                      ..strokeWidth = 4
-                                      ..color = Colors.black)),
-                          )),
-                      Padding(
-                          padding: EdgeInsets.all(20),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text("${balance.toStringAsFixed(2)}€",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 75,
-                                    color: balance < 0
-                                        ? Colors.redAccent
-                                        : Colors.green)),
-                          )),
-                    ]),
-                  ),
+                  child: Stack(children: [
+                    Padding(
+                        padding: EdgeInsets.all(5),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text("${balance.toStringAsFixed(2)}€",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 75,
+                                  foreground: Paint()
+                                    ..style = PaintingStyle.stroke
+                                    ..strokeWidth = 4
+                                    ..color = Colors.black)),
+                        )),
+                    Padding(
+                        padding: EdgeInsets.all(5),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text("${balance.toStringAsFixed(2)}€",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 75,
+                                  color: balance < 0
+                                      ? Colors.redAccent
+                                      : Colors.green)),
+                        )),
+                  ]),
                 ),
                 Container(
                     width: 300,
@@ -466,7 +471,7 @@ class _MyAppState extends State<MyApp> {
 
                                                           _listExpenseCopy =
                                                               _listExpense;
-                                                          balance -= cost;
+
                                                           setState(() {
                                                             updateBalance();
                                                             cost = 0;
@@ -481,7 +486,6 @@ class _MyAppState extends State<MyApp> {
                                               ));
                                     } else if (item == Item.delete) {
                                       deleteExpense(_listExpense[index].name);
-                                      setState(() {});
                                     }
                                   });
 
@@ -541,142 +545,97 @@ class _MyAppState extends State<MyApp> {
                                     if (item == Item.edit) {
                                       showDialog(
                                           context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                                title: Text("Input expenses"),
-                                                content: Container(
-                                                  height: 260,
-                                                  child: Column(
-                                                    children: [
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(2.0),
-                                                        child: Center(
-                                                            child: SizedBox(
-                                                          height: 75,
-                                                          width: 75,
-                                                          child: _image == null
-                                                              ? const Center(
-                                                                  child: Text(
-                                                                      'No Image selected'))
-                                                              : Image.file(
-                                                                  _image!,
-                                                                  fit: BoxFit
-                                                                      .contain,
-                                                                ),
-                                                        )),
-                                                      ),
-                                                      ElevatedButton(
-                                                          onPressed: () async {
-                                                            var pickedFile =
-                                                                await _picker.pickImage(
-                                                                    source: ImageSource
-                                                                        .gallery);
-                                                            if (pickedFile !=
-                                                                null) {
-                                                              setState(() {
-                                                                _image = File(
-                                                                    pickedFile
-                                                                        .path);
-                                                              });
-                                                            }
-                                                          },
-                                                          child: Text(
-                                                              "Pick image")),
-                                                      Padding(
-                                                        padding:
-                                                            EdgeInsets.all(5),
-                                                        child: TextField(
-                                                          controller:
-                                                              _controller,
-                                                          decoration:
-                                                              InputDecoration(
-                                                            border:
-                                                                OutlineInputBorder(),
-                                                            labelText:
-                                                                "Name of expense",
-                                                          ),
-                                                          onChanged: (value) {
-                                                            name = value;
-                                                          },
+                                          builder: (BuildContext context) {
+                                            return AlertDialog(
+                                              title: Text("Add balance"),
+                                              content: Container(
+                                                height: 155,
+                                                child: Column(
+                                                  children: [
+                                                    Text("Input added balance"),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              5),
+                                                      child: TextField(
+                                                        controller: _controller,
+                                                        decoration:
+                                                            InputDecoration(
+                                                          border:
+                                                              OutlineInputBorder(),
+                                                          labelText: "name",
                                                         ),
+                                                        onChanged: (value) {
+                                                          setState(() {
+                                                            name = value;
+                                                          });
+                                                        },
                                                       ),
-                                                      Padding(
-                                                        padding:
-                                                            EdgeInsets.all(5),
-                                                        child: TextField(
-                                                          controller:
-                                                              _controller2,
-                                                          decoration:
-                                                              InputDecoration(
-                                                            border:
-                                                                OutlineInputBorder(),
-                                                            labelText:
-                                                                "Cost of expense",
-                                                          ),
-                                                          onChanged: (value) {
+                                                    ),
+                                                    Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              5),
+                                                      child: TextField(
+                                                        controller:
+                                                            _controller2,
+                                                        decoration:
+                                                            InputDecoration(
+                                                          border:
+                                                              OutlineInputBorder(),
+                                                          labelText:
+                                                              "Amount of balance",
+                                                        ),
+                                                        onChanged: (value) {
+                                                          setState(() {
                                                             cost = double.parse(
                                                                 value);
-                                                          },
-                                                          keyboardType:
-                                                              TextInputType
-                                                                  .number,
-                                                        ),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                actions: [
-                                                  Padding(
-                                                    padding: EdgeInsets.all(25),
-                                                    child: ElevatedButton(
-                                                        onPressed: () async {
-                                                          updateExpense(
-                                                              Expense(
-                                                                  name: name,
-                                                                  cost: cost,
-                                                                  image: base64Encode(_image !=
-                                                                          null
-                                                                      ? await _image!
-                                                                          .readAsBytes()
-                                                                      : (await rootBundle.load(
-                                                                              'assets/no-image-icon.png'))
-                                                                          .buffer
-                                                                          .asUint8List()),
-                                                                  date: _listExpense[
-                                                                          index]
-                                                                      .date),
-                                                              _listExpense[
-                                                                      index]
-                                                                  .name);
-
-                                                          _listExpense =
-                                                              await retrieveExpenses();
-
-                                                          _listExpenseCopy =
-                                                              _listExpense;
-                                                          balance -= cost;
-                                                          setState(() {
-                                                            updateBalance();
-                                                            cost = 0;
-                                                            name = "";
                                                           });
-                                                          Navigator.of(context)
-                                                              .pop();
                                                         },
-                                                        child: Text("Save")),
-                                                  ),
-                                                ],
-                                              ));
+                                                        keyboardType:
+                                                            TextInputType
+                                                                .number,
+                                                      ),
+                                                    )
+                                                  ],
+                                                ),
+                                              ),
+                                              actions: [
+                                                ElevatedButton(
+                                                    onPressed: () async {
+                                                      updateExpense(
+                                                          Balance(
+                                                              name: name,
+                                                              cost: cost,
+                                                              date:
+                                                                  _listBalance[
+                                                                          index]
+                                                                      .name),
+                                                          _listBalance[index]
+                                                              .name);
+                                                      _listBalance =
+                                                          await retrieveBalances();
+                                                      _listBalanceCopy =
+                                                          _listBalance;
+
+                                                      setState(() {
+                                                        updateBalance();
+                                                        cost = 0;
+                                                      });
+                                                      Navigator.of(context)
+                                                          .pop();
+                                                    },
+                                                    child: Text("Save"))
+                                              ],
+                                            );
+                                          });
                                     } else if (item == Item.delete) {
-                                      deleteExpense(_listBalance[index].name);
-                                      print("fac");
+                                      deleteBalance(_listBalance[index].name);
                                     }
                                   });
 
                                   _listBalance = await retrieveBalances();
-                                  print(_listBalance);
+
                                   setState(() {});
                                 },
                                 itemBuilder: (BuildContext context) {
@@ -733,47 +692,58 @@ class _MyAppState extends State<MyApp> {
                                                                   "Add balance"),
                                                               content:
                                                                   Container(
-                                                                height: 150,
+                                                                height: 155,
                                                                 child: Column(
                                                                   children: [
                                                                     Text(
                                                                         "Input added balance"),
-                                                                    TextField(
-                                                                      decoration:
-                                                                          InputDecoration(
-                                                                        border:
-                                                                            OutlineInputBorder(),
-                                                                        labelText:
-                                                                            "name",
+                                                                    Padding(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          5.0),
+                                                                      child:
+                                                                          TextField(
+                                                                        decoration:
+                                                                            InputDecoration(
+                                                                          border:
+                                                                              OutlineInputBorder(),
+                                                                          labelText:
+                                                                              "Name",
+                                                                        ),
+                                                                        onChanged:
+                                                                            (value) {
+                                                                          setState(
+                                                                              () {
+                                                                            name =
+                                                                                value;
+                                                                          });
+                                                                        },
                                                                       ),
-                                                                      onChanged:
-                                                                          (value) {
-                                                                        setState(
-                                                                            () {
-                                                                          name =
-                                                                              value;
-                                                                        });
-                                                                      },
                                                                     ),
-                                                                    TextField(
-                                                                      decoration:
-                                                                          InputDecoration(
-                                                                        border:
-                                                                            OutlineInputBorder(),
-                                                                        labelText:
-                                                                            "Amount of balance",
+                                                                    Padding(
+                                                                      padding: const EdgeInsets
+                                                                          .all(
+                                                                          5.0),
+                                                                      child:
+                                                                          TextField(
+                                                                        decoration:
+                                                                            InputDecoration(
+                                                                          border:
+                                                                              OutlineInputBorder(),
+                                                                          labelText:
+                                                                              "Amount of balance",
+                                                                        ),
+                                                                        onChanged:
+                                                                            (value) {
+                                                                          setState(
+                                                                              () {
+                                                                            cost =
+                                                                                double.parse(value);
+                                                                          });
+                                                                        },
+                                                                        keyboardType:
+                                                                            TextInputType.number,
                                                                       ),
-                                                                      onChanged:
-                                                                          (value) {
-                                                                        setState(
-                                                                            () {
-                                                                          cost =
-                                                                              double.parse(value);
-                                                                        });
-                                                                      },
-                                                                      keyboardType:
-                                                                          TextInputType
-                                                                              .number,
                                                                     )
                                                                   ],
                                                                 ),
@@ -797,11 +767,7 @@ class _MyAppState extends State<MyApp> {
 
                                                                       setState(
                                                                           () {
-                                                                        balance +=
-                                                                            cost;
-                                                                        prefs.setDouble(
-                                                                            'balance',
-                                                                            double.parse(balance.toStringAsFixed(2)));
+                                                                        updateBalance();
                                                                         cost =
                                                                             0;
                                                                       });
@@ -938,11 +904,13 @@ class _MyAppState extends State<MyApp> {
 
                                                                           _listExpenseCopy =
                                                                               _listExpense;
-                                                                          balance -=
-                                                                              cost;
+
                                                                           setState(
                                                                               () {
                                                                             updateBalance();
+                                                                            _listExpenseCopy =
+                                                                                _listExpense;
+
                                                                             cost =
                                                                                 0;
                                                                             name =

@@ -1,5 +1,5 @@
-name: expensetracker
-description: "A new Flutter project."
+name: presupuest
+description: "An Expense Tracker built with Flutter for iOS and Android"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -41,8 +41,12 @@ dependencies:
   sqflite_common_ffi: any
   image_picker: ^0.8.4+4
   google_fonts: ^6.2.1
+  flutter_launcher_icons: ^0.13.1
   
- 
+flutter_launcher_icons:
+  image_path: assets\logo.png
+  android: true
+  ios: true
 
 dev_dependencies:
   flutter_test:

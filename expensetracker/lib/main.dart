@@ -246,8 +246,8 @@ class _MyAppState extends State<MyApp> {
   String name = "";
   double cost = 0;
   TextEditingController editingController = TextEditingController();
-  TextEditingController _controller = TextEditingController();
-  TextEditingController _controller2 = TextEditingController();
+  final TextEditingController _controller = TextEditingController();
+  final TextEditingController _controller2 = TextEditingController();
 
   void search(String query) {
     setState(() {
@@ -266,17 +266,23 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true, textTheme: GoogleFonts.antonTextTheme(), brightness: SchedulerBinding.instance.platformDispatcher.platformBrightness),
-      
-      
+      theme: ThemeData(
+          useMaterial3: true,
+          textTheme: GoogleFonts.antonTextTheme(
+              Theme.of(context).textTheme.apply(bodyColor: Colors.white)),
+          brightness:
+              SchedulerBinding.instance.platformDispatcher.platformBrightness),
+
       //textTheme: ,
       home: Builder(
         builder: (BuildContext context) {
           return Scaffold(
             appBar: AppBar(
-              title: const Text(
-                "PresuPuest",
-                style: TextStyle(color: Colors.white),
+              title: const Center(
+                child: Text(
+                  "PresuPuest",
+                  style: TextStyle(color: Colors.white, fontSize: 30),
+                ),
               ),
               backgroundColor: Colors.black,
               shape: const RoundedRectangleBorder(
@@ -287,16 +293,15 @@ class _MyAppState extends State<MyApp> {
             ),
             body: Column(
               children: [
-                Container(
+                SizedBox(
                   height: 100,
                   child: Stack(children: [
                     Padding(
-                        padding: EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(5),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text("${balance.toStringAsFixed(2)}€",
                               style: TextStyle(
-                                 
                                   fontSize: 75,
                                   foreground: Paint()
                                     ..style = PaintingStyle.stroke
@@ -304,12 +309,11 @@ class _MyAppState extends State<MyApp> {
                                     ..color = Colors.black)),
                         )),
                     Padding(
-                        padding: EdgeInsets.all(5),
+                        padding: const EdgeInsets.all(5),
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text("${balance.toStringAsFixed(2)}€",
                               style: TextStyle(
-                                  
                                   fontSize: 75,
                                   color: balance < 0
                                       ? Colors.redAccent
@@ -317,11 +321,11 @@ class _MyAppState extends State<MyApp> {
                         )),
                   ]),
                 ),
-                Container(
+                SizedBox(
                     width: 300,
                     child: TextField(
                       controller: editingController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                           labelText: "Search",
                           hintText: "Search",
                           prefixIcon: Icon(Icons.search),
@@ -332,11 +336,15 @@ class _MyAppState extends State<MyApp> {
                     )),
                 Padding(
                   padding: const EdgeInsets.all(2.0),
-                  child: Text("Expenses", style:  TextStyle(fontSize: 25, color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,)),
+                  child: Text("Expenses",
+                      style: TextStyle(
+                        fontSize: 25,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      )),
                 ),
-                Container(
+                SizedBox(
                   height: 225,
                   child: Center(
                       child: Card(
@@ -364,13 +372,13 @@ class _MyAppState extends State<MyApp> {
                                   cost = temp.cost;
                                   setState(() {
                                     if (item == Item.edit) {
-                                      
                                       showDialog(
                                           context: context,
                                           builder: (BuildContext context) =>
                                               AlertDialog(
-                                                title: Text("Input expenses"),
-                                                content: Container(
+                                                title: const Text(
+                                                    "Input expenses"),
+                                                content: SizedBox(
                                                   height: 260,
                                                   child: Column(
                                                     children: [
@@ -387,7 +395,10 @@ class _MyAppState extends State<MyApp> {
                                                                   child: Text(
                                                                       'No Image selected'))
                                                               : Image.memory(
-                                                                 base64Decode(_listExpense[index].image),
+                                                                  base64Decode(
+                                                                      _listExpense[
+                                                                              index]
+                                                                          .image),
                                                                   fit: BoxFit
                                                                       .contain,
                                                                 ),
@@ -402,24 +413,23 @@ class _MyAppState extends State<MyApp> {
                                                             if (pickedFile !=
                                                                 null) {
                                                               setState(() {
-                                                                
                                                                 _image = File(
                                                                     pickedFile
                                                                         .path);
-                                                                        
                                                               });
                                                             }
                                                           },
-                                                          child: Text(
+                                                          child: const Text(
                                                               "Take image")),
                                                       Padding(
                                                         padding:
-                                                            EdgeInsets.all(5),
+                                                            const EdgeInsets
+                                                                .all(5),
                                                         child: TextField(
                                                           controller:
                                                               _controller,
                                                           decoration:
-                                                              InputDecoration(
+                                                              const InputDecoration(
                                                             border:
                                                                 OutlineInputBorder(),
                                                             labelText:
@@ -432,12 +442,13 @@ class _MyAppState extends State<MyApp> {
                                                       ),
                                                       Padding(
                                                         padding:
-                                                            EdgeInsets.all(5),
+                                                            const EdgeInsets
+                                                                .all(5),
                                                         child: TextField(
                                                           controller:
                                                               _controller2,
                                                           decoration:
-                                                              InputDecoration(
+                                                              const InputDecoration(
                                                             border:
                                                                 OutlineInputBorder(),
                                                             labelText:
@@ -457,7 +468,9 @@ class _MyAppState extends State<MyApp> {
                                                 ),
                                                 actions: [
                                                   Padding(
-                                                    padding: EdgeInsets.all(25),
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            25),
                                                     child: ElevatedButton(
                                                         onPressed: () async {
                                                           updateExpense(
@@ -494,27 +507,31 @@ class _MyAppState extends State<MyApp> {
                                                           Navigator.of(context)
                                                               .pop();
                                                         },
-                                                        child: Text("Save")),
+                                                        child:
+                                                            const Text("Save")),
                                                   ),
                                                 ],
                                               ));
                                     } else if (item == Item.delete) {
                                       deleteExpense(_listExpense[index].name);
-                                      updateBalance();
+                                      
                                     }
                                   });
 
                                   _listExpense = await retrieveExpenses();
 
-                                  setState(() {});
+                                  setState(() {updateBalance();});
                                 },
                                 itemBuilder: (BuildContext context) {
                                   return <PopupMenuEntry<Item>>[
                                     const PopupMenuItem<Item>(
-                                        child: Text("Edit"), value: Item.edit),
+                                      value: Item.edit,
+                                      child: Text("Edit"),
+                                    ),
                                     const PopupMenuItem<Item>(
-                                        child: Text("Delete"),
-                                        value: Item.delete)
+                                      value: Item.delete,
+                                      child: Text("Delete"),
+                                    )
                                   ];
                                 },
                               ),
@@ -531,11 +548,15 @@ class _MyAppState extends State<MyApp> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(2.0),
-                  child: Text("Cash imports", style: TextStyle(fontSize: 25, color: Theme.of(context).brightness == Brightness.dark
-                ? Colors.white
-                : Colors.black,)),
+                  child: Text("Cash imports",
+                      style: TextStyle(
+                        fontSize: 25,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : Colors.black,
+                      )),
                 ),
-                Container(
+                SizedBox(
                   height: 225,
                   child: Center(
                       child: Card(
@@ -567,12 +588,13 @@ class _MyAppState extends State<MyApp> {
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
-                                              title: Text("Add balance"),
-                                              content: Container(
+                                              title: const Text("Add balance"),
+                                              content: SizedBox(
                                                 height: 155,
                                                 child: Column(
                                                   children: [
-                                                    Text("Input added balance"),
+                                                    const Text(
+                                                        "Input added balance"),
                                                     Padding(
                                                       padding:
                                                           const EdgeInsets.all(
@@ -580,10 +602,10 @@ class _MyAppState extends State<MyApp> {
                                                       child: TextField(
                                                         controller: _controller,
                                                         decoration:
-                                                            InputDecoration(
+                                                            const InputDecoration(
                                                           border:
                                                               OutlineInputBorder(),
-                                                          labelText: "name",
+                                                          labelText: "Name",
                                                         ),
                                                         onChanged: (value) {
                                                           setState(() {
@@ -600,7 +622,7 @@ class _MyAppState extends State<MyApp> {
                                                         controller:
                                                             _controller2,
                                                         decoration:
-                                                            InputDecoration(
+                                                            const InputDecoration(
                                                           border:
                                                               OutlineInputBorder(),
                                                           labelText:
@@ -645,31 +667,34 @@ class _MyAppState extends State<MyApp> {
                                                       Navigator.of(context)
                                                           .pop();
                                                     },
-                                                    child: Text("Save"))
+                                                    child: const Text("Save"))
                                               ],
                                             );
                                           });
                                     } else if (item == Item.delete) {
                                       deleteBalance(_listBalance[index].name);
-                                      updateBalance();
+                                      
                                     }
                                   });
 
                                   _listBalance = await retrieveBalances();
 
-                                  setState(() {});
+                                  setState(() {updateBalance();});
                                 },
                                 itemBuilder: (BuildContext context) {
                                   return <PopupMenuEntry<Item>>[
                                     const PopupMenuItem<Item>(
-                                        child: Text("Edit"), value: Item.edit),
+                                      value: Item.edit,
+                                      child: Text("Edit"),
+                                    ),
                                     const PopupMenuItem<Item>(
-                                        child: Text("Delete"),
-                                        value: Item.delete)
+                                      value: Item.delete,
+                                      child: Text("Delete"),
+                                    )
                                   ];
                                 },
                               ),
-                              leading: Icon(Icons.money, size: 60),
+                              leading: const Icon(Icons.money, size: 60),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15.0),
                               )),
@@ -681,9 +706,9 @@ class _MyAppState extends State<MyApp> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Padding(
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     child: FloatingActionButton(
-                        shape: CircleBorder(),
+                        shape: const CircleBorder(),
                         onPressed: () {
                           showModalBottomSheet(
                               context: context,
@@ -702,21 +727,21 @@ class _MyAppState extends State<MyApp> {
                                                 padding:
                                                     const EdgeInsets.all(8.0),
                                                 child: FloatingActionButton(
-                                                    child: Icon(Icons.money),
+                                                    child:
+                                                        const Icon(Icons.money),
                                                     onPressed: () {
                                                       showDialog(
                                                           context: context,
                                                           builder: (BuildContext
                                                               context) {
                                                             return AlertDialog(
-                                                              title: Text(
+                                                              title: const Text(
                                                                   "Add balance"),
-                                                              content:
-                                                                  Container(
+                                                              content: SizedBox(
                                                                 height: 155,
                                                                 child: Column(
                                                                   children: [
-                                                                    Text(
+                                                                    const Text(
                                                                         "Input added balance"),
                                                                     Padding(
                                                                       padding: const EdgeInsets
@@ -725,7 +750,7 @@ class _MyAppState extends State<MyApp> {
                                                                       child:
                                                                           TextField(
                                                                         decoration:
-                                                                            InputDecoration(
+                                                                            const InputDecoration(
                                                                           border:
                                                                               OutlineInputBorder(),
                                                                           labelText:
@@ -748,7 +773,7 @@ class _MyAppState extends State<MyApp> {
                                                                       child:
                                                                           TextField(
                                                                         decoration:
-                                                                            InputDecoration(
+                                                                            const InputDecoration(
                                                                           border:
                                                                               OutlineInputBorder(),
                                                                           labelText:
@@ -796,16 +821,15 @@ class _MyAppState extends State<MyApp> {
                                                                               context)
                                                                           .pop();
                                                                     },
-                                                                    child: Text(
+                                                                    child: const Text(
                                                                         "Save"))
                                                               ],
                                                             );
                                                           });
                                                     }),
                                               ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
+                                              const Padding(
+                                                padding: EdgeInsets.all(8.0),
                                                 child: Text("Add Balance"),
                                               )
                                             ],
@@ -818,17 +842,18 @@ class _MyAppState extends State<MyApp> {
                                                 padding:
                                                     const EdgeInsets.all(8.0),
                                                 child: FloatingActionButton(
-                                                    child: Icon(Icons.shop),
+                                                    child:
+                                                        const Icon(Icons.shop),
                                                     onPressed: () {
                                                       showDialog(
                                                           context: context,
                                                           builder: (BuildContext
                                                                   context) =>
                                                               AlertDialog(
-                                                                title: Text(
+                                                                title: const Text(
                                                                     "Input expenses"),
                                                                 content:
-                                                                    Container(
+                                                                    SizedBox(
                                                                   height: 260,
                                                                   child: Column(
                                                                     children: [
@@ -863,14 +888,15 @@ class _MyAppState extends State<MyApp> {
                                                                             }
                                                                           },
                                                                           child:
-                                                                              Text("Take  image")),
+                                                                              const Text("Take  image")),
                                                                       Padding(
-                                                                        padding:
-                                                                            EdgeInsets.all(5),
+                                                                        padding: const EdgeInsets
+                                                                            .all(
+                                                                            5),
                                                                         child:
                                                                             TextField(
                                                                           decoration:
-                                                                              InputDecoration(
+                                                                              const InputDecoration(
                                                                             border:
                                                                                 OutlineInputBorder(),
                                                                             labelText:
@@ -884,12 +910,13 @@ class _MyAppState extends State<MyApp> {
                                                                         ),
                                                                       ),
                                                                       Padding(
-                                                                        padding:
-                                                                            EdgeInsets.all(5),
+                                                                        padding: const EdgeInsets
+                                                                            .all(
+                                                                            5),
                                                                         child:
                                                                             TextField(
                                                                           decoration:
-                                                                              InputDecoration(
+                                                                              const InputDecoration(
                                                                             border:
                                                                                 OutlineInputBorder(),
                                                                             labelText:
@@ -910,7 +937,8 @@ class _MyAppState extends State<MyApp> {
                                                                 actions: [
                                                                   Padding(
                                                                     padding:
-                                                                        EdgeInsets.all(
+                                                                        const EdgeInsets
+                                                                            .all(
                                                                             25),
                                                                     child: ElevatedButton(
                                                                         onPressed: () async {
@@ -932,7 +960,8 @@ class _MyAppState extends State<MyApp> {
                                                                             _listExpenseCopy =
                                                                                 _listExpense;
 
-                                                                            _image = null;
+                                                                            _image =
+                                                                                null;
                                                                             cost =
                                                                                 0;
                                                                             name =
@@ -941,24 +970,22 @@ class _MyAppState extends State<MyApp> {
                                                                           Navigator.of(context)
                                                                               .pop();
                                                                         },
-                                                                        child: Text("Save")),
+                                                                        child: const Text("Save")),
                                                                   ),
                                                                 ],
                                                               ));
                                                     }),
                                               ),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.all(8.0),
+                                              const Padding(
+                                                padding: EdgeInsets.all(8.0),
                                                 child: Text("Add Expense"),
                                               )
                                             ],
                                           ),
                                         ]));
                               });
-                          /**/
                         },
-                        child: Icon(Icons.add)),
+                        child: const Icon(Icons.add)),
                   ),
                 )
               ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -7,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'package:flutter/services.dart' show rootBundle;
 
@@ -264,7 +266,10 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(useMaterial3: true),
+      theme: ThemeData(useMaterial3: true, textTheme: GoogleFonts.antonTextTheme(), brightness: SchedulerBinding.instance.platformDispatcher.platformBrightness),
+      
+      
+      //textTheme: ,
       home: Builder(
         builder: (BuildContext context) {
           return Scaffold(
@@ -291,7 +296,7 @@ class _MyAppState extends State<MyApp> {
                           alignment: Alignment.centerRight,
                           child: Text("${balance.toStringAsFixed(2)}€",
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                 
                                   fontSize: 75,
                                   foreground: Paint()
                                     ..style = PaintingStyle.stroke
@@ -304,7 +309,7 @@ class _MyAppState extends State<MyApp> {
                           alignment: Alignment.centerRight,
                           child: Text("${balance.toStringAsFixed(2)}€",
                               style: TextStyle(
-                                  fontWeight: FontWeight.bold,
+                                  
                                   fontSize: 75,
                                   color: balance < 0
                                       ? Colors.redAccent
@@ -325,7 +330,12 @@ class _MyAppState extends State<MyApp> {
                                   BorderRadius.all(Radius.circular(25.0)))),
                       onChanged: (value) => search(value),
                     )),
-                Text("Expenses", style: TextStyle(fontSize: 25)),
+                Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Text("Expenses", style:  TextStyle(fontSize: 25, color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,)),
+                ),
                 Container(
                   height: 225,
                   child: Center(
@@ -354,6 +364,7 @@ class _MyAppState extends State<MyApp> {
                                   cost = temp.cost;
                                   setState(() {
                                     if (item == Item.edit) {
+                                      
                                       showDialog(
                                           context: context,
                                           builder: (BuildContext context) =>
@@ -375,8 +386,8 @@ class _MyAppState extends State<MyApp> {
                                                               ? const Center(
                                                                   child: Text(
                                                                       'No Image selected'))
-                                                              : Image.file(
-                                                                  _image!,
+                                                              : Image.memory(
+                                                                 base64Decode(_listExpense[index].image),
                                                                   fit: BoxFit
                                                                       .contain,
                                                                 ),
@@ -387,18 +398,20 @@ class _MyAppState extends State<MyApp> {
                                                             var pickedFile =
                                                                 await _picker.pickImage(
                                                                     source: ImageSource
-                                                                        .gallery);
+                                                                        .camera);
                                                             if (pickedFile !=
                                                                 null) {
                                                               setState(() {
+                                                                
                                                                 _image = File(
                                                                     pickedFile
                                                                         .path);
+                                                                        
                                                               });
                                                             }
                                                           },
                                                           child: Text(
-                                                              "Pick image")),
+                                                              "Take image")),
                                                       Padding(
                                                         padding:
                                                             EdgeInsets.all(5),
@@ -474,6 +487,7 @@ class _MyAppState extends State<MyApp> {
 
                                                           setState(() {
                                                             updateBalance();
+                                                            _image = null;
                                                             cost = 0;
                                                             name = "";
                                                           });
@@ -486,6 +500,7 @@ class _MyAppState extends State<MyApp> {
                                               ));
                                     } else if (item == Item.delete) {
                                       deleteExpense(_listExpense[index].name);
+                                      updateBalance();
                                     }
                                   });
 
@@ -514,7 +529,12 @@ class _MyAppState extends State<MyApp> {
                     ),
                   )),
                 ),
-                Text("Cash imports", style: TextStyle(fontSize: 25)),
+                Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Text("Cash imports", style: TextStyle(fontSize: 25, color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.white
+                : Colors.black,)),
+                ),
                 Container(
                   height: 225,
                   child: Center(
@@ -631,6 +651,7 @@ class _MyAppState extends State<MyApp> {
                                           });
                                     } else if (item == Item.delete) {
                                       deleteBalance(_listBalance[index].name);
+                                      updateBalance();
                                     }
                                   });
 
@@ -833,7 +854,7 @@ class _MyAppState extends State<MyApp> {
                                                                           onPressed:
                                                                               () async {
                                                                             var pickedFile =
-                                                                                await _picker.pickImage(source: ImageSource.gallery);
+                                                                                await _picker.pickImage(source: ImageSource.camera);
                                                                             if (pickedFile !=
                                                                                 null) {
                                                                               setState(() {
@@ -842,7 +863,7 @@ class _MyAppState extends State<MyApp> {
                                                                             }
                                                                           },
                                                                           child:
-                                                                              Text("Pick image")),
+                                                                              Text("Take  image")),
                                                                       Padding(
                                                                         padding:
                                                                             EdgeInsets.all(5),
@@ -911,6 +932,7 @@ class _MyAppState extends State<MyApp> {
                                                                             _listExpenseCopy =
                                                                                 _listExpense;
 
+                                                                            _image = null;
                                                                             cost =
                                                                                 0;
                                                                             name =
